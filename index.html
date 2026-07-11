@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Life System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a1a;
+    --card: #111128;
+    --card2: #16162e;
+    --border: rgba(100,80,255,0.2);
+    --blue: #4f8ef7;
+    --violet: #8b5cf6;
+    --cyan: #22d3ee;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --pink: #ec4899;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --xp-grad: linear-gradient(90deg,#4f8ef7,#8b5cf6);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .topbar-logo {
+    font-size: 18px;
+    font-weight: 700;
+    background: var(--xp-grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.5px;
+  }
+  .topbar-xp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .top-level {
+    background: linear-gradient(135deg,#4f8ef7,#8b5cf6);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .top-xp-bar {
+    width: 100px;
+    height: 6px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .top-xp-fill {
+    height: 100%;
+    background: var(--xp-grad);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+  }
+  .top-xp-text { font-size: 11px; color: var(--muted); }
+
+  /* ── NAV ── */
+  .nav {
+    display: flex;
+    gap: 2px;
+    padding: 10px 12px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 57px;
+    z-index: 40;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .nav-btn.active {
+    background: rgba(79,142,247,0.15);
+    border-color: rgba(79,142,247,0.4);
+    color: var(--blue);
+  }
+  .nav-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.05);
+    color: var(--text);
+  }
+
+  /* ── MAIN ── */
+  .main { flex: 1; padding: 20px; max-width: 900px; margin: 0 auto; width: 100%; }
+
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .card2 { background: var(--card2); }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 12px;
+  }
+
+  /* ── PROFILE ── */
+  .profile-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#4f8ef7,#8b5cf6);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700; color: #fff;
+    border: 2px solid rgba(139,92,246,0.5);
+    box-shadow: 0 0 24px rgba(139,92,246,0.25);
+    flex-shrink: 0;
+  }
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-name { font-size: 20px; font-weight: 700; }
+  .profile-rank { font-size: 13px; color: var(--violet); margin-top: 3px; }
+  .level-badge {
+    background: linear-gradient(135deg,#4f8ef7,#8b5cf6);
+    border-radius: 10px;
+    padding: 8px 16px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .level-badge .lbl { font-size: 10px; color: rgba(255,255,255,0.7); letter-spacing: 0.1em; }
+  .level-badge .val { font-size: 28px; font-weight: 800; color: #fff; line-height: 1.1; }
+
+  .xp-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .xp-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .xp-bar-wrap {
+    flex: 1;
+    height: 10px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .xp-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    background: var(--xp-grad);
+    transition: width 0.8s ease;
+  }
+  .xp-val { font-size: 13px; color: var(--blue); font-weight: 600; white-space: nowrap; }
+
+  .chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .chip {
+    flex: 1;
+    min-width: 80px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+  }
+  .chip .cv { font-size: 22px; font-weight: 700; }
+  .chip .cl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ── QUOTE ── */
+  .quote {
+    background: rgba(79,142,247,0.07);
+    border: 1px solid rgba(79,142,247,0.18);
+    border-left: 3px solid var(--blue);
+    border-radius: 8px;
+    padding: 13px 15px;
+    font-size: 14px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 16px;
+  }
+
+  /* ── TASKS ── */
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .task:hover { background: rgba(79,142,247,0.07); border-color: rgba(79,142,247,0.3); }
+  .task.done { opacity: 0.5; }
+  .task.done .task-name { text-decoration: line-through; }
+  .task-check {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(79,142,247,0.4);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+  .task.done .task-check {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .task-name { flex: 1; font-size: 14px; }
+  .task-cat { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .task-xp { font-size: 12px; color: var(--violet); font-weight: 700; white-space: nowrap; }
+
+  /* ── ATTRIBUTES ── */
+  .attr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .attr-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+  .attr-card:hover { border-color: rgba(139,92,246,0.45); background: rgba(139,92,246,0.05); }
+  .attr-name { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .attr-level { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .attr-bar-bg { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; margin-bottom: 5px; }
+  .attr-bar-fill { height: 5px; border-radius: 3px; transition: width 0.6s; }
+  .attr-xp { font-size: 11px; color: var(--muted); }
+
+  /* ── AI COACH ── */
+  .coach-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .coach-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg,#8b5cf6,#22d3ee);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .coach-name { font-size: 15px; font-weight: 600; }
+  .coach-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .online-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: var(--green);
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  .chat-area {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 380px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+    padding-right: 4px;
+    scroll-behavior: smooth;
+  }
+  .chat-area::-webkit-scrollbar { width: 4px; }
+  .chat-area::-webkit-scrollbar-thumb { background: rgba(100,80,255,0.3); border-radius: 2px; }
+
+  .msg {
+    padding: 11px 15px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    max-width: 85%;
+    white-space: pre-wrap;
+  }
+  .msg.ai {
+    background: rgba(139,92,246,0.1);
+    border: 1px solid rgba(139,92,246,0.18);
+    align-self: flex-start;
+    border-bottom-left-radius: 3px;
+  }
+  .msg.user {
+    background: rgba(79,142,247,0.13);
+    border: 1px solid rgba(79,142,247,0.22);
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+  }
+  .msg.typing {
+    background: rgba(139,92,246,0.06);
+    border: 1px solid rgba(139,92,246,0.12);
+    align-self: flex-start;
+    color: var(--muted);
+    font-style: italic;
+    border-bottom-left-radius: 3px;
+  }
+
+  .chat-row {
+    display: flex;
+    gap: 8px;
+  }
+  .chat-input {
+    flex: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px 15px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  .chat-input:focus { border-color: rgba(139,92,246,0.5); }
+  .chat-input::placeholder { color: var(--muted); }
+  .chat-send {
+    background: linear-gradient(135deg,#4f8ef7,#8b5cf6);
+    border: none;
+    border-radius: 9px;
+    padding: 11px 18px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .chat-send:hover { opacity: 0.85; }
+  .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .quick-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .quick-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .quick-btn:hover { background: rgba(139,92,246,0.08); border-color: rgba(139,92,246,0.3); color: var(--text); }
+
+  /* ── STATS ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .stat-val { font-size: 26px; font-weight: 700; }
+  .stat-lbl { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+  .bar-label { font-size: 13px; width: 110px; flex-shrink: 0; }
+  .bar-bg { flex: 1; height: 7px; background: rgba(255,255,255,0.07); border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 7px; border-radius: 4px; }
+  .bar-lvl { font-size: 12px; color: var(--muted); width: 32px; text-align: right; flex-shrink: 0; }
+
+  /* ── BADGES ── */
+  .badge-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 13px;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge.earned {
+    border-color: rgba(245,158,11,0.4);
+    color: var(--amber);
+    background: rgba(245,158,11,0.06);
+  }
+
+  /* ── CALENDAR ── */
+  .cal-header {
+    display: grid;
+    grid-template-columns: repeat(7,1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+  .cal-day-name { text-align:center; font-size:11px; color:var(--muted); padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+  .cal-day {
+    aspect-ratio: 1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cal-day:hover { background: rgba(255,255,255,0.05); }
+  .cal-day.done-day { background: rgba(16,185,129,0.18); color: var(--green); font-weight: 600; }
+  .cal-day.streak-day { background: rgba(245,158,11,0.18); color: var(--amber); font-weight: 600; }
+  .cal-day.today { border: 1.5px solid rgba(79,142,247,0.6); color: var(--blue); font-weight: 700; }
+  .cal-day.empty { cursor: default; }
+
+  /* ── SETTINGS ── */
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 14px; }
+  .settings-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .settings-input {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+    width: 200px;
+  }
+  .settings-input:focus { border-color: rgba(139,92,246,0.5); }
+  .btn-primary {
+    background: linear-gradient(135deg,#4f8ef7,#8b5cf6);
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-danger {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 9px 18px;
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.18); }
+
+  /* ── LEVEL-UP OVERLAY ── */
+  .levelup-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(10,10,26,0.93);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 200;
+    text-align: center;
+    padding: 20px;
+  }
+  .levelup-overlay.show { display: flex; }
+  .levelup-icon { font-size: 72px; animation: pulse-lu 0.7s ease-in-out infinite alternate; }
+  @keyframes pulse-lu { from { transform: scale(1) rotate(-3deg); } to { transform: scale(1.15) rotate(3deg); } }
+  .levelup-title { font-size: 32px; font-weight: 800; color: #fff; }
+  .levelup-lvl { font-size: 56px; font-weight: 900; background: var(--xp-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
+  .levelup-sub { color: var(--muted); font-size: 15px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 300;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .main { padding: 12px; }
+    .profile-header { gap: 12px; }
+    .quick-btns { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">⚡ Life System</div>
+  <div class="topbar-xp">
+    <div class="top-level" id="top-level">Lv 7</div>
+    <div>
+      <div class="top-xp-bar"><div class="top-xp-fill" id="top-xp-fill" style="width:64%"></div></div>
+      <div class="top-xp-text" id="top-xp-text">1420 / 2200 XP</div>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav class="nav" role="navigation" aria-label="Hauptnavigation">
+  <button class="nav-btn active" onclick="showTab('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+  <button class="nav-btn" onclick="showTab('tasks',this)"><i class="ti ti-checkbox"></i> Aufgaben</button>
+  <button class="nav-btn" onclick="showTab('attributes',this)"><i class="ti ti-chart-radar"></i> Attribute</button>
+  <button class="nav-btn" onclick="showTab('coach',this)"><i class="ti ti-robot"></i> KI-Coach</button>
+  <button class="nav-btn" onclick="showTab('stats',this)"><i class="ti ti-chart-bar"></i> Statistiken</button>
+  <button class="nav-btn" onclick="showTab('calendar',this)"><i class="ti ti-calendar"></i> Kalender</button>
+  <button class="nav-btn" onclick="showTab('settings',this)"><i class="ti ti-settings"></i> Einstellungen</button>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- ── DASHBOARD ── -->
+  <div id="tab-dashboard" class="tab active">
+    <div class="card">
+      <div class="profile-header">
+        <div class="avatar" id="avatar-letter">M</div>
+        <div class="profile-info">
+          <div class="profile-name" id="profile-name">MaxPower_99</div>
+          <div class="profile-rank" id="profile-rank">⚡ Aufsteigender Champion</div>
+        </div>
+        <div class="level-badge">
+          <div class="lbl">LEVEL</div>
+          <div class="val" id="dash-level">7</div>
+        </div>
+      </div>
+      <div class="xp-row">
+        <span class="xp-label">XP</span>
+        <div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar" style="width:64%"></div></div>
+        <span class="xp-val" id="xp-display">1420 / 2200</span>
+      </div>
+      <div class="chips">
+        <div class="chip"><div class="cv" id="streak-chip" style="color:#f59e0b">12</div><div class="cl">🔥 Streak (Tage)</div></div>
+        <div class="chip"><div class="cv" id="done-chip" style="color:#10b981">0</div><div class="cl">✅ Heute erledigt</div></div>
+        <div class="chip"><div class="cv" style="color:#8b5cf6">3</div><div class="cl">🏆 Abzeichen</div></div>
+      </div>
+    </div>
+
+    <div class="quote" id="daily-quote">"Jeder Experte war einmal ein Anfänger."</div>
+
+    <div class="section-title">Heutige Aufgaben</div>
+    <div id="dash-tasks"></div>
+
+    <div class="section-title" style="margin-top:18px">Top Attribute</div>
+    <div class="attr-grid" id="dash-attrs"></div>
+  </div>
+
+  <!-- ── AUFGABEN ── -->
+  <div id="tab-tasks" class="tab">
+    <div class="card">
+      <div class="section-title">Tägliche Missionen</div>
+      <div id="all-tasks"></div>
+    </div>
+    <div class="card card2">
+      <div class="section-title">Wöchentliche Herausforderungen</div>
+      <div id="weekly-tasks"></div>
+    </div>
+  </div>
+
+  <!-- ── ATTRIBUTE ── -->
+  <div id="tab-attributes" class="tab">
+    <div id="attr-sections"></div>
+  </div>
+
+  <!-- ── KI-COACH ── -->
+  <div id="tab-coach" class="tab">
+    <div class="card">
+      <div class="coach-header">
+        <div class="coach-avatar">🤖</div>
+        <div>
+          <div class="coach-name">ARIA — Dein KI-Coach</div>
+          <div class="coach-sub"><span class="online-dot"></span>Online · antwortet mit Claude AI</div>
+        </div>
+      </div>
+      <div class="chat-area" id="chat-area" role="log" aria-live="polite"></div>
+      <div class="chat-row">
+        <input class="chat-input" id="chat-input" type="text" placeholder="Frag ARIA etwas…" aria-label="Nachricht eingeben" onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="chat-send" id="chat-send-btn" onclick="sendChat()" aria-label="Senden">
+          <i class="ti ti-send"></i> Senden
+        </button>
+      </div>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="qp('Erstelle mir einen Lernplan für diese Woche')">📚 Lernplan erstellen</button>
+        <button class="quick-btn" onclick="qp('Erstelle mir einen Trainingsplan für Anfänger')">💪 Trainingsplan</button>
+        <button class="quick-btn" onclick="qp('Analysiere meine Stärken und Schwächen und gib mir Tipps')">📊 Stärken & Schwächen</button>
+        <button class="quick-btn" onclick="qp('Ich brauche Motivation, ich fühle mich heute nicht gut')">🌟 Motiviere mich!</button>
+        <button class="quick-btn" onclick="qp('Schlage mir eine neue Herausforderung vor, die zu meinem Level passt')">⚡ Neue Challenge</button>
+        <button class="quick-btn" onclick="qp('Wie kann ich meine Konzentration beim Lernen verbessern?')">🧠 Lerntipp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STATISTIKEN ── -->
+  <div id="tab-stats" class="tab">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="stat-xp">1420</div><div class="stat-lbl">Gesamt-XP</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-streak" style="color:var(--amber)">12</div><div class="stat-lbl">Tage Streak</div></div>
+      <div class="stat-card"><div class="stat-val" id="stat-done" style="color:var(--green)">0</div><div class="stat-lbl">Aufgaben heute</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:var(--violet)">3</div><div class="stat-lbl">Abzeichen</div></div>
+    </div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="section-title">Attribute Überblick</div>
+      <div id="stats-bars"></div>
+    </div>
+    <div class="card card2">
+      <div class="section-title">Deine Abzeichen</div>
+      <div class="badge-grid" id="badges"></div>
+    </div>
+  </div>
+
+  <!-- ── KALENDER ── -->
+  <div id="tab-calendar" class="tab">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:17px;font-weight:700;">Juli 2026</div>
+        <div style="display:flex;gap:12px;">
+          <span style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:rgba(16,185,129,0.3);border-radius:3px;display:inline-block;"></span>Erledigt</span>
+          <span style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;background:rgba(245,158,11,0.25);border-radius:3px;display:inline-block;"></span>Streak</span>
+          <span style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:5px;"><span style="width:12px;height:12px;border:1.5px solid rgba(79,142,247,0.6);border-radius:3px;display:inline-block;"></span>Heute</span>
+        </div>
+      </div>
+      <div class="cal-header">
+        <div class="cal-day-name">Mo</div><div class="cal-day-name">Di</div>
+        <div class="cal-day-name">Mi</div><div class="cal-day-name">Do</div>
+        <div class="cal-day-name">Fr</div><div class="cal-day-name">Sa</div>
+        <div class="cal-day-name">So</div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── EINSTELLUNGEN ── -->
+  <div id="tab-settings" class="tab">
+    <div class="card" style="margin-bottom:12px">
+      <div class="section-title">Profil</div>
+      <div class="settings-row">
+        <div><div class="settings-label">Benutzername</div><div class="settings-sub">Dein Anzeigename in der App</div></div>
+        <input class="settings-input" id="set-name" type="text" value="MaxPower_99" placeholder="Dein Name">
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Alter</div><div class="settings-sub">Für passende Aufgaben</div></div>
+        <input class="settings-input" id="set-age" type="number" value="15" min="10" max="20" placeholder="Alter">
+      </div>
+      <div style="margin-top:14px">
+        <button class="btn-primary" onclick="saveSettings()"><i class="ti ti-device-floppy"></i> Speichern</button>
+      </div>
+    </div>
+    <div class="card card2" style="margin-bottom:12px">
+      <div class="section-title">Fortschritt</div>
+      <div class="settings-row">
+        <div><div class="settings-label">XP zurücksetzen</div><div class="settings-sub">Startet dein Level bei 1</div></div>
+        <button class="btn-danger" onclick="if(confirm('Wirklich alles zurücksetzen?'))resetProgress()">Zurücksetzen</button>
+      </div>
+    </div>
+    <div class="card" style="background:rgba(79,142,247,0.05);border-color:rgba(79,142,247,0.2)">
+      <div class="section-title">Über die App</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">
+        <strong style="color:var(--text)">Life System</strong> — Dein persönliches Fortschrittssystem.<br>
+        Entwickelt um dir zu helfen, jeden Tag ein bisschen besser zu werden.<br><br>
+        KI-Coach powered by <strong style="color:var(--violet)">Claude (Anthropic)</strong>.
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<!-- LEVEL-UP OVERLAY -->
+<div class="levelup-overlay" id="levelup-overlay" role="dialog" aria-modal="true" aria-label="Level Up!">
+  <div class="levelup-icon">⚡</div>
+  <div class="levelup-title">LEVEL UP!</div>
+  <div class="levelup-lvl" id="lu-level">8</div>
+  <div class="levelup-sub" id="lu-sub">Du hast ein neues Level erreicht!</div>
+  <div style="font-size:14px;color:var(--muted);margin-top:4px" id="lu-xp">+100 XP</div>
+  <button class="btn-primary" style="margin-top:8px;padding:12px 28px;font-size:15px" onclick="closeLU()">Weiter kämpfen! 💪</button>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE — alles was gespeichert wird
+// ═══════════════════════════════════════════════════════════
+const DEFAULT_STATE = {
+  level: 7, xp: 1420, xpNeeded: 2200, streak: 12,
+  username: 'MaxPower_99', age: 15,
+  tasks: [
+    {id:1, name:'20 Minuten Mathematik üben', xp:25, done:false, cat:'Schule'},
+    {id:2, name:'8.000 Schritte gehen', xp:25, done:false, cat:'Körper'},
+    {id:3, name:'30 Minuten lesen', xp:25, done:false, cat:'Geist'},
+    {id:4, name:'2 Liter Wasser trinken', xp:10, done:false, cat:'Gewohnheiten'},
+    {id:5, name:'Zimmer aufräumen', xp:10, done:false, cat:'Gewohnheiten'},
+    {id:6, name:'15 Minuten Vokabeln lernen', xp:25, done:false, cat:'Schule'},
+    {id:7, name:'10 Minuten Dehnen', xp:10, done:false, cat:'Körper'},
+    {id:8, name:'1 Stunde ohne soziale Medien', xp:25, done:false, cat:'Geist'},
+    {id:9, name:'30 Liegestütze machen', xp:25, done:false, cat:'Körper'},
+    {id:10, name:'Hausaufgaben pünktlich erledigen', xp:50, done:false, cat:'Schule'},
+  ],
+  weekly: [
+    {id:'w1', name:'3 Trainingseinheiten absolvieren', xp:100, done:false},
+    {id:'w2', name:'Alle Hausaufgaben pünktlich erledigt', xp:100, done:false},
+    {id:'w3', name:'7 Tage ausreichend Wasser trinken', xp:50, done:false},
+    {id:'w4', name:'5 Tage mindestens 8h schlafen', xp:75, done:false},
+  ],
+  attrs: [
+    {name:'Kraft', cat:'Körper', level:5, xp:60, color:'#ec4899'},
+    {name:'Ausdauer', cat:'Körper', level:6, xp:45, color:'#ec4899'},
+    {name:'Beweglichkeit', cat:'Körper', level:4, xp:30, color:'#ec4899'},
+    {name:'Schnelligkeit', cat:'Körper', level:5, xp:55, color:'#ec4899'},
+    {name:'Konzentration', cat:'Geist', level:8, xp:80, color:'#22d3ee'},
+    {name:'Disziplin', cat:'Geist', level:7, xp:55, color:'#22d3ee'},
+    {name:'Lernfähigkeit', cat:'Geist', level:6, xp:70, color:'#22d3ee'},
+    {name:'Kreativität', cat:'Geist', level:5, xp:40, color:'#22d3ee'},
+    {name:'Mathematik', cat:'Schule', level:6, xp:70, color:'#4f8ef7'},
+    {name:'Sprachen', cat:'Schule', level:5, xp:40, color:'#4f8ef7'},
+    {name:'Naturwissenschaften', cat:'Schule', level:4, xp:35, color:'#4f8ef7'},
+    {name:'Schlaf', cat:'Gewohnheiten', level:7, xp:90, color:'#10b981'},
+    {name:'Wasser trinken', cat:'Gewohnheiten', level:6, xp:60, color:'#10b981'},
+    {name:'Lesen', cat:'Gewohnheiten', level:5, xp:50, color:'#10b981'},
+    {name:'Selbstvertrauen', cat:'Persönlichkeit', level:4, xp:35, color:'#f59e0b'},
+    {name:'Durchhaltevermögen', cat:'Persönlichkeit', level:6, xp:65, color:'#f59e0b'},
+    {name:'Verantwortung', cat:'Persönlichkeit', level:5, xp:55, color:'#f59e0b'},
+  ],
+  chatHistory: [],
+};
+
+const QUOTES = [
+  "Jeder Experte war einmal ein Anfänger. Fang heute an.",
+  "Kleine Schritte jeden Tag führen zu großen Veränderungen.",
+  "Disziplin ist die Brücke zwischen Zielen und Erfolgen.",
+  "Du bist stärker als du denkst. Beweise es heute.",
+  "Fortschritt, nicht Perfektion, ist das Ziel.",
+  "Der einzige schlechte Tag ist der, an dem du nichts lernst.",
+  "Tue heute, was andere nicht wollen — genieße morgen, was andere nicht können.",
+];
+
+const RANKS = [
+  'Neuling', 'Lernender', 'Aufsteiger', 'Kämpfer', 'Fortgeschrittener',
+  'Aufsteigender Champion', 'Champion', 'Meister', 'Großmeister', 'Legende',
+];
+
+const BADGES_DATA = [
+  {name:'Erste Aufgabe', icon:'🏅', earned:true},
+  {name:'3-Tage-Streak', icon:'🔥', earned:true},
+  {name:'Lernheld', icon:'📚', earned:true},
+  {name:'10 Aufgaben erledigt', icon:'⚡', earned:false},
+  {name:'Sportstudent', icon:'💪', earned:false},
+  {name:'Level 10 erreicht', icon:'🌟', earned:false},
+  {name:'7-Tage-Streak', icon:'🏆', earned:false},
+  {name:'Lesewurm', icon:'📖', earned:false},
+];
+
+// ═══════════════════════════════════════════════════════════
+// LOAD / SAVE
+// ═══════════════════════════════════════════════════════════
+function loadState() {
+  try {
+    const saved = localStorage.getItem('lifesystem_v2');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return JSON.parse(JSON.stringify(DEFAULT_STATE));
+}
+
+function saveState() {
+  try { localStorage.setItem('lifesystem_v2', JSON.stringify(S)); } catch(e) {}
+}
+
+let S = loadState();
+let chatMsgs = [];
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function showTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  renderTab(id);
+}
+
+function renderTab(id) {
+  if (id === 'dashboard') renderDashboard();
+  else if (id === 'tasks') renderTasks();
+  else if (id === 'attributes') renderAttributes();
+  else if (id === 'stats') renderStats();
+  else if (id === 'calendar') renderCalendar();
+}
+
+// ═══════════════════════════════════════════════════════════
+// XP & LEVEL
+// ═══════════════════════════════════════════════════════════
+function gainXP(amount, taskName) {
+  S.xp += amount;
+  showToast('+' + amount + ' XP — ' + taskName);
+  while (S.xp >= S.xpNeeded) {
+    S.xp -= S.xpNeeded;
+    S.level++;
+    S.xpNeeded = Math.round(S.xpNeeded * 1.3);
+    showLevelUp(S.level, amount);
+  }
+  saveState();
+  updateTopBar();
+}
+
+function updateTopBar() {
+  const pct = Math.round((S.xp / S.xpNeeded) * 100);
+  document.getElementById('top-level').textContent = 'Lv ' + S.level;
+  document.getElementById('top-xp-fill').style.width = pct + '%';
+  document.getElementById('top-xp-text').textContent = S.xp + ' / ' + S.xpNeeded + ' XP';
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════
+function renderDashboard() {
+  const doneCount = S.tasks.filter(t => t.done).length;
+  const pct = Math.round((S.xp / S.xpNeeded) * 100);
+  const rankIdx = Math.min(Math.floor(S.level / 2), RANKS.length - 1);
+
+  document.getElementById('avatar-letter').textContent = (S.username || 'U')[0].toUpperCase();
+  document.getElementById('profile-name').textContent = S.username;
+  document.getElementById('profile-rank').textContent = '⚡ ' + RANKS[rankIdx];
+  document.getElementById('dash-level').textContent = S.level;
+  document.getElementById('xp-bar').style.width = pct + '%';
+  document.getElementById('xp-display').textContent = S.xp + ' / ' + S.xpNeeded;
+  document.getElementById('streak-chip').textContent = S.streak;
+  document.getElementById('done-chip').textContent = doneCount;
+  document.getElementById('daily-quote').textContent = '"' + QUOTES[Math.floor(Date.now() / 86400000) % QUOTES.length] + '"';
+
+  // Tasks preview
+  const el = document.getElementById('dash-tasks');
+  el.innerHTML = '';
+  S.tasks.slice(0, 5).forEach(t => el.appendChild(makeTaskEl(t, false)));
+
+  // Top attrs
+  const ag = document.getElementById('dash-attrs');
+  ag.innerHTML = '';
+  S.attrs.slice(0, 4).forEach(a => ag.appendChild(makeAttrCard(a)));
+}
+
+// ═══════════════════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════════════════
+function makeTaskEl(t, isWeekly) {
+  const div = document.createElement('div');
+  div.className = 'task' + (t.done ? ' done' : '');
+  div.setAttribute('role', 'button');
+  div.setAttribute('aria-pressed', t.done ? 'true' : 'false');
+  div.setAttribute('tabindex', '0');
+  div.innerHTML = `
+    <div class="task-check">${t.done ? '<i class="ti ti-check" style="font-size:13px"></i>' : ''}</div>
+    <div style="flex:1">
+      <div class="task-name">${t.name}</div>
+      ${t.cat ? '<div class="task-cat">' + t.cat + '</div>' : ''}
+    </div>
+    <div class="task-xp">+${t.xp} XP</div>
+  `;
+  div.onclick = () => toggleTask(t.id, isWeekly);
+  div.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleTask(t.id, isWeekly); }};
+  return div;
+}
+
+function toggleTask(id, isWeekly) {
+  const arr = isWeekly ? S.weekly : S.tasks;
+  const t = arr.find(x => x.id === id);
+  if (!t) return;
+  if (!t.done) {
+    t.done = true;
+    gainXP(t.xp, t.name);
+  } else {
+    t.done = false;
+    S.xp = Math.max(0, S.xp - t.xp);
+    saveState();
+    updateTopBar();
+    showToast('Aufgabe zurückgesetzt');
+  }
+  // Re-render active tab
+  const activeTab = document.querySelector('.tab.active')?.id?.replace('tab-','');
+  if (activeTab) renderTab(activeTab);
+  renderDashboard();
+}
+
+function renderTasks() {
+  const at = document.getElementById('all-tasks');
+  at.innerHTML = '';
+  S.tasks.forEach(t => at.appendChild(makeTaskEl(t, false)));
+
+  const wt = document.getElementById('weekly-tasks');
+  wt.innerHTML = '';
+  S.weekly.forEach(t => at.appendChild(makeTaskEl(t, true)));
+  S.weekly.forEach(t => wt.appendChild(makeTaskEl(t, true)));
+}
+
+// ═══════════════════════════════════════════════════════════
+// ATTRIBUTES
+// ═══════════════════════════════════════════════════════════
+function makeAttrCard(a) {
+  const div = document.createElement('div');
+  div.className = 'attr-card';
+  div.innerHTML = `
+    <div class="attr-name">${a.name}</div>
+    <div class="attr-level">${a.level}</div>
+    <div class="attr-bar-bg"><div class="attr-bar-fill" style="width:${a.xp}%;background:${a.color}"></div></div>
+    <div class="attr-xp" style="color:${a.color}">${a.xp}% XP</div>
+  `;
+  return div;
+}
+
+function renderAttributes() {
+  const cats = {};
+  S.attrs.forEach(a => { if (!cats[a.cat]) cats[a.cat] = []; cats[a.cat].push(a); });
+  const el = document.getElementById('attr-sections');
+  el.innerHTML = '';
+  const catColors = { 'Körper':'#ec4899', 'Geist':'#22d3ee', 'Schule':'#4f8ef7', 'Gewohnheiten':'#10b981', 'Persönlichkeit':'#f59e0b' };
+  Object.entries(cats).forEach(([cat, attrs]) => {
+    const sec = document.createElement('div');
+    sec.className = 'card';
+    sec.style.marginBottom = '12px';
+    const col = catColors[cat] || '#8b5cf6';
+    sec.innerHTML = `<div class="section-title" style="color:${col}">${cat.toUpperCase()}</div><div class="attr-grid" id="cat-${cat.replace(/\s/g,'_')}"></div>`;
+    el.appendChild(sec);
+    const grid = sec.querySelector('.attr-grid');
+    attrs.forEach(a => grid.appendChild(makeAttrCard(a)));
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════
+function renderStats() {
+  const doneCount = S.tasks.filter(t => t.done).length;
+  document.getElementById('stat-xp').textContent = S.xp;
+  document.getElementById('stat-streak').textContent = S.streak;
+  document.getElementById('stat-done').textContent = doneCount;
+
+  const bars = document.getElementById('stats-bars');
+  bars.innerHTML = '';
+  S.attrs.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-label">${a.name}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${a.xp}%;background:${a.color}"></div></div>
+      <div class="bar-lvl">Lv${a.level}</div>
+    `;
+    bars.appendChild(row);
+  });
+
+  const bg = document.getElementById('badges');
+  bg.innerHTML = '';
+  BADGES_DATA.forEach(b => {
+    const d = document.createElement('div');
+    d.className = 'badge' + (b.earned ? ' earned' : '');
+    d.innerHTML = `<span>${b.icon}</span><span>${b.name}</span>`;
+    bg.appendChild(d);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════════
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  // July 2026 starts on Wednesday (index 2 in Mon-first grid)
+  const startOffset = 2;
+  const doneDays = [1,2,3,4,5,6,7,8,9,10];
+  const streakDays = [1,2,3,4,5,6,7,8,9,10];
+  const today = 11;
+
+  for (let i = 0; i < startOffset; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day empty';
+    grid.appendChild(e);
+  }
+  for (let d = 1; d <= 31; d++) {
+    const div = document.createElement('div');
+    div.className = 'cal-day';
+    if (d === today) div.classList.add('today');
+    else if (streakDays.includes(d)) div.classList.add('streak-day');
+    else if (doneDays.includes(d)) div.classList.add('done-day');
+    div.textContent = d;
+    grid.appendChild(div);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI COACH
+// ═══════════════════════════════════════════════════════════
+function renderChat() {
+  const area = document.getElementById('chat-area');
+  area.innerHTML = '';
+  chatMsgs.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'msg ' + m.role;
+    div.textContent = m.text;
+    area.appendChild(div);
+  });
+  area.scrollTop = area.scrollHeight;
+}
+
+function addMsg(role, text) {
+  chatMsgs.push({ role, text });
+  renderChat();
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-send-btn');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  btn.disabled = true;
+
+  addMsg('user', text);
+  S.chatHistory.push({ role: 'user', content: text });
+
+  addMsg('typing', 'ARIA denkt nach…');
+
+  const doneCount = S.tasks.filter(t => t.done).length;
+  const rankIdx = Math.min(Math.floor(S.level / 2), RANKS.length - 1);
+  const systemPrompt = `Du bist ARIA, ein freundlicher, motivierender KI-Coach in einer App namens "Life System" für Schülerinnen und Schüler ab 12 Jahren. Du hilfst mit Lernplänen, Trainingsplänen, Motivation und persönlichem Wachstum. Sei warm, ermutigend und nie zu streng. Antworte immer auf Deutsch. Halte Antworten kompakt (max. 4 Absätze). 
+
+Nutzerprofil:
+- Name: ${S.username}
+- Alter: ${S.age} Jahre
+- Level: ${S.level}
+- XP: ${S.xp} / ${S.xpNeeded}
+- Rang: ${RANKS[rankIdx]}
+- Streak: ${S.streak} Tage
+- Heute erledigt: ${doneCount} Aufgaben`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: S.chatHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.map(c => c.text || '').join('') || 'Entschuldige, keine Antwort erhalten.';
+    chatMsgs.pop();
+    addMsg('ai', reply);
+    S.chatHistory.push({ role: 'assistant', content: reply });
+    if (S.chatHistory.length > 20) S.chatHistory = S.chatHistory.slice(-20);
+    saveState();
+  } catch(e) {
+    chatMsgs.pop();
+    addMsg('ai', 'Verbindungsfehler. Bitte versuche es erneut.');
+  }
+  btn.disabled = false;
+}
+
+function qp(text) {
+  document.getElementById('chat-input').value = text;
+  sendChat();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════
+function saveSettings() {
+  const name = document.getElementById('set-name').value.trim();
+  const age = parseInt(document.getElementById('set-age').value);
+  if (name) S.username = name;
+  if (age >= 10 && age <= 20) S.age = age;
+  saveState();
+  renderDashboard();
+  showToast('Einstellungen gespeichert ✓');
+}
+
+function resetProgress() {
+  S = JSON.parse(JSON.stringify(DEFAULT_STATE));
+  saveState();
+  updateTopBar();
+  renderDashboard();
+  showToast('Fortschritt zurückgesetzt');
+}
+
+// ═══════════════════════════════════════════════════════════
+// LEVEL-UP
+// ═══════════════════════════════════════════════════════════
+function showLevelUp(level, xpGained) {
+  document.getElementById('lu-level').textContent = level;
+  document.getElementById('lu-xp').textContent = '+' + xpGained + ' XP';
+  document.getElementById('levelup-overlay').classList.add('show');
+}
+function closeLU() {
+  document.getElementById('levelup-overlay').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  updateTopBar();
+  renderDashboard();
+  // Init chat
+  addMsg('ai', 'Hey ' + S.username + '! Ich bin ARIA, dein persönlicher KI-Coach. 🤖✨\n\nIch helfe dir mit Lernplänen, Trainingstipps und Motivation. Du bist Level ' + S.level + ' — weiter so! Was möchtest du heute erreichen?');
+}
+
+init();
+</script>
+</body>
+</html>
